@@ -12,6 +12,43 @@ function wm_api_init(){
         'methods'=>'POST',
         'callback'=>'wm_api_endpoint_login'
     ));
+
+    register_rest_route($namespace,'/validate', array(
+        'methods'=>'GET',
+        'callback'=>'wm_api_endpoint_validate'
+    ));
+
+    add_filter('rest_pre_dispatch', 'wm_rest_pre_dispatch',10, 3);
+}
+
+function wm_rest_pre_dispatch($url, $server, $request){
+    $params = $request->get_params();
+
+    if(!empty($params['jwt'])){
+        $jwt = new JWT();
+
+        $info = $jwt->validate($params['jwt']);
+        if($info && !empty($info->id)){
+            wp_set_current_user($info->id);
+        }
+    }
+}
+
+function wm_api_endpoint_validate($request){
+    $array = array('valid' => false);
+    $params = $request->get_params();
+
+    if(!empty($params['jwt'])){
+        $jwt = new JWT();
+
+        $info = $jwt->validate($params['jwt']);
+
+        if($info && !empty($info->id)){
+            $array['valid'] = true;
+        }
+    }
+
+    return $array;
 }
 
 function wm_api_endpoint_login($request){
